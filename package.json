@@ -1,0 +1,61 @@
+{
+  "name": "omarfarooq",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Umar Farooq Mobile Zone - Shop Management Desktop Application",
+  "author": "Umar Farooq Mobile Zone",
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:start": "electron .",
+    "build:electron": "powershell -Command \"if (Test-Path release) { Remove-Item -Recurse -Force release }\" && vite build && electron-builder"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "html2pdf.js": "^0.14.0",
+    "jsbarcode": "^3.12.3",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.39.0",
+    "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.1.1",
+    "electron-builder": "^26.15.3",
+    "oxlint": "^1.79.0",
+    "vite": "^8.2.2",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.umarfarooq.mobileshop",
+    "productName": "Umar Farooq Mobile Zone",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "mobile-shop-backend/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  }
+}
