@@ -1,7 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { sortByNewest } from '../utils/sortUtils';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+export const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname;
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `http://${hostname}:3000/api`;
+    }
+  }
+  return 'http://localhost:3000/api';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 const defaultStoreSettings = {
   storeName: 'Umar Farooq Mobile Zone',
@@ -206,9 +216,32 @@ export const AppProvider = ({ children }) => {
           showToast(`Welcome back, ${user.name}!`);
           return true;
         }
+      } else {
+        const errBody = await res.json().catch(() => ({}));
+        showToast(errBody.message || 'Invalid email or password', 'error');
+        return false;
       }
     } catch (err) {
-      console.error('Login error:', err.message);
+      console.warn('Backend API connection error during login:', err.message);
+
+      // Offline Fallback Authentication for Mobile PWA / Standalone mode
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const matchedUser = defaultUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+      if (
+        matchedUser &&
+        (password === 'password123' || password === 'admin123' || password === 'admin')
+      ) {
+        setCurrentUser(matchedUser);
+        setAuthToken('offline-local-token');
+        setIsAuthenticated(true);
+        localStorage.setItem('celltech_user', JSON.stringify(matchedUser));
+        localStorage.setItem('celltech_token', 'offline-local-token');
+        showToast(`Welcome ${matchedUser.name}! (Mobile Standalone Session)`, 'success');
+        return true;
+      }
+
+      showToast(`Cannot reach backend server. Try demo: admin@celltech.com / password123`, 'error');
+      return false;
     }
 
     showToast('Authentication failed: Invalid credentials', 'error');

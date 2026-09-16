@@ -29,12 +29,13 @@ export const Login = () => {
     <div
       style={{
         minHeight: '100vh',
-        width: '100vw',
+        width: '100%',
+        boxSizing: 'border-box',
         background: 'radial-gradient(circle at 50% 20%, #0f172a 0%, #080b13 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.5rem',
+        padding: '1.25rem',
         color: 'var(--text-main)',
         fontFamily: 'var(--font-sans)',
       }}
@@ -44,7 +45,7 @@ export const Login = () => {
         style={{
           width: '100%',
           maxWidth: '420px',
-          padding: '2.5rem',
+          padding: '2rem 1.5rem',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
@@ -180,6 +181,34 @@ export const Login = () => {
               </>
             )}
           </button>
+
+          {/* Quick Demo Fill for Mobile Users */}
+          <div style={{ marginTop: '1.25rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@celltech.com');
+                setPassword('password123');
+              }}
+              style={{
+                width: '100%',
+                padding: '0.6rem 0.75rem',
+                borderRadius: '12px',
+                background: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                color: 'var(--accent-cyan)',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+              }}
+            >
+              <span>🔑 Auto-Fill Admin Login</span>
+            </button>
+          </div>
         </form>
       </div>
     </div>

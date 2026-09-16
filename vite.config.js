@@ -6,6 +6,7 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   server: {
+    host: true,
     watch: {
       ignored: ['**/release/**', '**/dist-electron/**', '**/mobile-shop-backend/**'],
     },
