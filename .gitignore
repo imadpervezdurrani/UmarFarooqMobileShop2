@@ -17,6 +17,11 @@ Client-Package
 Client-Package/*
 *.exe
 *.tmp
+# Environment files
+.env
+.env.*
+*.env
+config.env
 *.local
 *.db
 
