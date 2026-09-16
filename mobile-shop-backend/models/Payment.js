@@ -1,7 +1,8 @@
 import store, { saveDB } from '../config/db.js';
+import { sortByNewest } from '../utils/sortUtils.js';
 
 export const Payment = {
-  find: () => store.payments,
+  find: () => [...store.payments].sort(sortByNewest),
   create: (data) => {
     const newPayment = {
       id: `pay-${Date.now()}`,

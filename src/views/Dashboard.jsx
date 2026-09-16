@@ -13,8 +13,10 @@ import {
   ShoppingCart,
   ArrowUpRight,
   ArrowDownRight,
+  Eye,
   Calendar,
 } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Dashboard = ({ setActiveTab, setSelectedSale }) => {
   const { storeSettings, products, sales, purchases, expenses, isAdmin } = useApp();
@@ -345,7 +347,7 @@ export const Dashboard = ({ setActiveTab, setSelectedSale }) => {
               </tr>
             </thead>
             <tbody>
-              {sales.slice(0, 5).map((s, idx) => (
+              {[...sales].sort(sortByNewest).slice(0, 5).map((s, idx) => (
                 <tr key={s.id ? `${s.id}-${idx}` : idx}>
                   <td style={{ fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
                     {s.invoiceNo}

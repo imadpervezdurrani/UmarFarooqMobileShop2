@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ShieldCheck,
 } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Suppliers = ({ searchQuery }) => {
   const {
@@ -113,14 +114,16 @@ export const Suppliers = ({ searchQuery }) => {
     setReturnReason('');
   };
 
-  const filteredSuppliers = suppliers.filter((s) => {
-    return (
-      !searchQuery ||
-      (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (s.phone && String(s.phone).includes(searchQuery)) ||
-      (s.address && s.address.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  });
+  const filteredSuppliers = suppliers
+    .filter((s) => {
+      return (
+        !searchQuery ||
+        (s.name && s.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.phone && String(s.phone).includes(searchQuery)) ||
+        (s.address && s.address.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    })
+    .sort(sortByNewest);
 
   const totalPayableDues = suppliers.reduce(
     (sum, s) => sum + (parseFloat(s.amountPayable || s.closingPayable || 0)),

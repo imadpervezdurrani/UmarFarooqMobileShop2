@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { ShoppingBag, Plus, Truck, Calendar, DollarSign, Edit, Trash2 } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Purchases = () => {
   const {
@@ -135,7 +136,7 @@ export const Purchases = () => {
                   </td>
                 </tr>
               ) : (
-                purchases.map((po) => (
+                [...purchases].sort(sortByNewest).map((po) => (
                   <tr key={po.id}>
                     <td style={{ fontWeight: 700, color: 'var(--accent-emerald)', fontFamily: 'var(--font-mono)' }}>
                       {po.purchaseNo}

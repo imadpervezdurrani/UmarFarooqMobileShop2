@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { Receipt, Plus, Trash2, Calendar, DollarSign, Tag } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Expenses = () => {
   const { storeSettings, expenses, addExpense, deleteExpense, isAdmin } = useApp();
@@ -32,9 +33,11 @@ export const Expenses = () => {
     });
   };
 
-  const filteredExpenses = expenses.filter((e) => {
-    return selectedCategory === 'All' || e.category === selectedCategory;
-  });
+  const filteredExpenses = expenses
+    .filter((e) => {
+      return selectedCategory === 'All' || e.category === selectedCategory;
+    })
+    .sort(sortByNewest);
 
   const totalExpenseVal = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
 

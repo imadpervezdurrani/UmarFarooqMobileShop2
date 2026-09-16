@@ -13,13 +13,16 @@ import {
   ChevronRight,
   Laptop,
   Download,
+  X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { DownloadAppModal } from '../common/DownloadAppModal';
+import { PwaInstallModal } from '../common/PwaInstallPrompt';
 
-export const Sidebar = ({ activeTab, setActiveTab }) => {
+export const Sidebar = ({ activeTab, setActiveTab, isOpen, onClose }) => {
   const { isAdmin } = useApp();
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showPwaModal, setShowPwaModal] = useState(false);
   const isElectron = window.electronAPI?.isElectron;
 
   const navItems = [
@@ -33,21 +36,38 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
     { id: 'users', label: 'Profile & Staff Team', icon: Users },
+    { id: 'install-mobile-app', label: 'Install Mobile App (PWA)', icon: Smartphone, isPwaInstallAction: true },
     { id: 'download-app', label: 'Download Desktop App', icon: Laptop, isDownloadAction: true },
   ];
 
   const handleNavClick = (item) => {
     if (item.isDownloadAction) {
       setShowDownloadModal(true);
+    } else if (item.isPwaInstallAction) {
+      setShowPwaModal(true);
     } else {
       setActiveTab(item.id);
     }
+    if (onClose) onClose();
   };
 
   return (
     <>
+      {isOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 998,
+          }}
+        />
+      )}
       <aside
-        className="sidebar"
+        className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}
         style={{
           width: '250px',
           background: 'var(--bg-sidebar)',
@@ -58,18 +78,45 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
           transition: 'var(--transition-fast)',
         }}
       >
-        <div style={{ padding: '1.5rem 1.25rem 0.5rem 1.25rem' }}>
+        <div style={{ padding: '1.25rem 1.25rem 0.5rem 1.25rem' }}>
           <div
             style={{
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'var(--text-dim)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
               marginBottom: '0.75rem',
             }}
           >
-            Navigation Menu
+            <div
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'var(--text-dim)',
+              }}
+            >
+              Navigation Menu
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mobile-sidebar-close-btn"
+              title="Close Menu"
+              style={{
+                display: 'none', // Shown on mobile
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '0.3rem',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X size={16} />
+            </button>
           </div>
         </div>
 
@@ -189,6 +236,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
       </aside>
 
       <DownloadAppModal isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} />
+      <PwaInstallModal isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} />
     </>
   );
 };

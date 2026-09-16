@@ -1,8 +1,9 @@
 import store, { saveDB } from '../config/db.js';
 import { SupplierLedger } from './SupplierLedger.js';
+import { sortByNewest } from '../utils/sortUtils.js';
 
 export const Supplier = {
-  find: () => store.suppliers,
+  find: () => [...store.suppliers].sort(sortByNewest),
   findById: (id) => store.suppliers.find((s) => s.id === id),
 
   create: (data) => {

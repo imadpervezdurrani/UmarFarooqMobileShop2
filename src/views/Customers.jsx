@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { Users, Plus, DollarSign, BookOpen, Phone, MapPin, CheckCircle2, Edit, Trash2 } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Customers = ({ searchQuery }) => {
   const { storeSettings, customers, addCustomer, updateCustomer, deleteCustomer, recordCustomerPayment, sales } = useApp();
@@ -42,14 +43,16 @@ export const Customers = ({ searchQuery }) => {
     setPaymentAmount('');
   };
 
-  const filteredCustomers = customers.filter((c) => {
-    return (
-      !searchQuery ||
-      (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.phone && String(c.phone).includes(searchQuery)) ||
-      (c.address && c.address.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  });
+  const filteredCustomers = customers
+    .filter((c) => {
+      return (
+        !searchQuery ||
+        (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (c.phone && String(c.phone).includes(searchQuery)) ||
+        (c.address && c.address.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    })
+    .sort(sortByNewest);
 
   const totalOutstandingDues = customers.reduce((sum, c) => sum + (c.remainingCredit || c.dues || 0), 0);
 

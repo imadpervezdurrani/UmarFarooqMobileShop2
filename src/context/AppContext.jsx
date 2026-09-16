@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { sortByNewest } from '../utils/sortUtils';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -126,38 +127,38 @@ export const AppProvider = ({ children }) => {
 
       if (prodRes.ok) {
         const res = await prodRes.json();
-        if (res.data) setProducts(res.data);
+        if (res.data) setProducts([...res.data].sort(sortByNewest));
       }
       if (custRes.ok) {
         const res = await custRes.json();
-        if (res.data) setCustomers(res.data);
+        if (res.data) setCustomers([...res.data].sort(sortByNewest));
       }
       if (suppRes.ok) {
         const res = await suppRes.json();
-        if (res.data) setSuppliers(res.data);
+        if (res.data) setSuppliers([...res.data].sort(sortByNewest));
       }
       if (salesRes.ok) {
         const res = await salesRes.json();
         if (res.data) {
-          const uniqueSales = Array.from(new Map(res.data.map((item) => [item.id, item])).values());
+          const uniqueSales = Array.from(new Map(res.data.map((item) => [item.id, item])).values()).sort(sortByNewest);
           setSales(uniqueSales);
         }
       }
       if (poRes.ok) {
         const res = await poRes.json();
-        if (res.data) setPurchases(res.data);
+        if (res.data) setPurchases([...res.data].sort(sortByNewest));
       }
       if (expRes.ok) {
         const res = await expRes.json();
-        if (res.data) setExpenses(res.data);
+        if (res.data) setExpenses([...res.data].sort(sortByNewest));
       }
       if (payRes.ok) {
         const res = await payRes.json();
-        if (res.data) setPayments(res.data);
+        if (res.data) setPayments([...res.data].sort(sortByNewest));
       }
       if (histRes.ok) {
         const res = await histRes.json();
-        if (res.data) setStockHistory(res.data);
+        if (res.data) setStockHistory([...res.data].sort(sortByNewest));
       }
       if (userRes && userRes.ok) {
         const res = await userRes.json();
@@ -390,9 +391,11 @@ export const AppProvider = ({ children }) => {
 
       if (res.ok) {
         const body = await res.json();
+        const savedProd = body.data || newProduct;
+        setProducts((prev) => [savedProd, ...prev.filter((p) => p.id !== savedProd.id)]);
         fetchAllDataFromBackend();
-        showToast(`Product "${body.data?.brand || newProduct.brand} ${body.data?.model || newProduct.model}" added to Database!`);
-        return body.data || newProduct;
+        showToast(`Product "${savedProd.brand} ${savedProd.model}" added to Database!`);
+        return savedProd;
       }
     } catch (err) {
       console.error('API Error adding product:', err);
@@ -800,6 +803,7 @@ export const AppProvider = ({ children }) => {
       });
       if (res.ok) {
         const body = await res.json();
+        setSuppliers((prev) => [body.data, ...prev.filter((s) => s.id !== body.data.id)]);
         fetchAllDataFromBackend();
         showToast(`Supplier "${body.data.name}" registered in Database!`);
         return body.data;

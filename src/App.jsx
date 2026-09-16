@@ -3,6 +3,8 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { Toast } from './components/common/Toast';
+import { PwaInstallBanner } from './components/common/PwaInstallPrompt';
+import { LayoutDashboard, ShoppingCart, FileText, Smartphone, Menu } from 'lucide-react';
 
 import { Login } from './views/Login';
 import { Dashboard } from './views/Dashboard';
@@ -21,12 +23,14 @@ function MainLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSale, setSelectedSale] = useState(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   if (!isAuthenticated || !currentUser) {
     return (
       <>
         <Login />
         <Toast />
+        <PwaInstallBanner />
       </>
     );
   }
@@ -67,12 +71,80 @@ function MainLayout() {
 
   return (
     <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+      />
       <div className="main-viewport">
-        <Navbar searchQuery={searchQuery} onSearch={handleSearch} setActiveTab={setActiveTab} />
+        <Navbar
+          searchQuery={searchQuery}
+          onSearch={handleSearch}
+          setActiveTab={setActiveTab}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+        />
         <main className="content-body">{renderView()}</main>
       </div>
+
+      {/* Native Mobile Bottom Navigation Bar */}
+      <nav className="mobile-bottom-nav">
+        <button
+          type="button"
+          className={`mobile-bottom-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('dashboard');
+            setIsMobileSidebarOpen(false);
+          }}
+        >
+          <LayoutDashboard size={20} />
+          <span>Home</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-nav-item ${activeTab === 'sales' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('sales');
+            setIsMobileSidebarOpen(false);
+          }}
+        >
+          <ShoppingCart size={20} />
+          <span>POS Sale</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-nav-item ${activeTab === 'invoices' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('invoices');
+            setIsMobileSidebarOpen(false);
+          }}
+        >
+          <FileText size={20} />
+          <span>Invoices</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('inventory');
+            setIsMobileSidebarOpen(false);
+          }}
+        >
+          <Smartphone size={20} />
+          <span>Stock</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-bottom-nav-item ${isMobileSidebarOpen ? 'active' : ''}`}
+          onClick={() => setIsMobileSidebarOpen((prev) => !prev)}
+        >
+          <Menu size={20} />
+          <span>Menu</span>
+        </button>
+      </nav>
+
       <Toast />
+      <PwaInstallBanner />
     </div>
   );
 }

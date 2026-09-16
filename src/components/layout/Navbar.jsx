@@ -15,14 +15,17 @@ import {
   X,
   Laptop,
   Download,
+  Menu,
 } from 'lucide-react';
 import { DownloadAppModal } from '../common/DownloadAppModal';
+import { PwaInstallModal } from '../common/PwaInstallPrompt';
 
-export const Navbar = ({ onSearch, searchQuery, setActiveTab }) => {
+export const Navbar = ({ onSearch, searchQuery, setActiveTab, onToggleMobileSidebar }) => {
   const { storeSettings, currentUser, switchRole, logout, isAdmin, products, theme, setTheme } = useApp();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showPwaModal, setShowPwaModal] = useState(false);
 
   const isElectron = window.electronAPI?.isElectron;
   const lowStockCount = (products || []).filter((p) => p.stock <= p.minStockLimit).length;
@@ -46,7 +49,28 @@ export const Navbar = ({ onSearch, searchQuery, setActiveTab }) => {
         }}
       >
         {/* Brand Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Mobile Hamburger Toggle */}
+          <button
+            type="button"
+            onClick={onToggleMobileSidebar}
+            className="mobile-hamburger-btn"
+            title="Open Mobile Navigation Menu"
+            style={{
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '10px',
+              padding: '0.5rem',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              display: 'none', // Shown on mobile via CSS
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Menu size={20} />
+          </button>
+
           <div
             style={{
               width: '42px',
@@ -57,6 +81,7 @@ export const Navbar = ({ onSearch, searchQuery, setActiveTab }) => {
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 0 15px rgba(56, 189, 248, 0.4)',
+              flexShrink: 0,
             }}
           >
             <Smartphone size={24} color="#041221" />
@@ -131,6 +156,29 @@ export const Navbar = ({ onSearch, searchQuery, setActiveTab }) => {
               <span>{lowStockCount} Low Stock</span>
             </div>
           )}
+
+          {/* PWA Mobile App Install Button */}
+          <button
+            onClick={() => setShowPwaModal(true)}
+            className="btn btn-sm btn-pwa-install"
+            title="Install Mobile App on Android or iPhone"
+            style={{
+              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(56, 189, 248, 0.12))',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              color: 'var(--accent-cyan)',
+              borderRadius: '20px',
+              padding: '0.45rem 0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+          >
+            <Smartphone size={15} />
+            <span className="pwa-btn-label">Install App</span>
+          </button>
 
           {/* Theme Switcher Dropdown */}
           <div style={{ position: 'relative' }}>
@@ -452,6 +500,7 @@ export const Navbar = ({ onSearch, searchQuery, setActiveTab }) => {
       </div>
     </header>
     <DownloadAppModal isOpen={showDownloadModal} onClose={() => setShowDownloadModal(false)} />
+    <PwaInstallModal isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} />
   </>
 );
 };

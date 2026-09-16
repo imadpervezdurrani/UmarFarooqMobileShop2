@@ -1,11 +1,14 @@
 import store, { saveDB } from '../config/db.js';
+import { sortByNewest } from '../utils/sortUtils.js';
 
 export const Sale = {
   find: () => {
-    return store.sales.map((sale) => ({
-      ...sale,
-      items: store.sale_items.filter((si) => si.saleId === sale.id),
-    }));
+    return store.sales
+      .map((sale) => ({
+        ...sale,
+        items: store.sale_items.filter((si) => si.saleId === sale.id),
+      }))
+      .sort(sortByNewest);
   },
   findById: (id) => {
     const sale = store.sales.find((s) => s.id === id);

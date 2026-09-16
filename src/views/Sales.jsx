@@ -16,6 +16,7 @@ import {
   Smartphone,
   Search,
 } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Sales = ({ searchQuery = '', setSelectedSale, setActiveTab }) => {
   const {
@@ -537,6 +538,7 @@ export const Sales = ({ searchQuery = '', setSelectedSale, setActiveTab }) => {
               <tbody>
                 {sales
                   .filter((s) => s.status !== 'Refunded')
+                  .sort(sortByNewest)
                   .slice(0, 5)
                   .map((s) => (
                     <tr key={s.id}>

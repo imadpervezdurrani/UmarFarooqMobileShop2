@@ -1,7 +1,8 @@
 import store, { saveDB } from '../config/db.js';
+import { sortByNewest } from '../utils/sortUtils.js';
 
 export const StockTransaction = {
-  find: () => store.stock_transactions,
+  find: () => [...store.stock_transactions].sort(sortByNewest),
   create: (data) => {
     const newTx = {
       id: `sh-${Date.now()}-${data.productId || ''}`,

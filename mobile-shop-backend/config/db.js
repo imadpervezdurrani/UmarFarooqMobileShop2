@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
+import { sortByNewest } from '../utils/sortUtils.js';
 
 export const defaultSampleData = {
   users: [
@@ -82,7 +84,12 @@ export async function loadFromMongoDB() {
           const docs = await db.collection(key).find({}).toArray();
           if (docs.length > 0) {
             hasDocs = true;
-            store[key] = docs.map(({ _id, ...rest }) => rest);
+            const mapped = docs.map(({ _id, ...rest }) => rest);
+            // Sort records with newest first
+            if (key !== 'users' && key !== 'categories') {
+              mapped.sort(sortByNewest);
+            }
+            store[key] = mapped;
           }
         }
       }
@@ -181,8 +188,20 @@ export function saveDB() {
 export const connectDB = async () => {
   const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/UmarFarooqMobileShop';
 
+  // Ensure SRV DNS lookup resolves reliably for MongoDB Atlas on Windows
+  if (mongoURI.includes('mongodb+srv://')) {
+    try {
+      dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+    } catch (e) {
+      // Ignore if not permitted
+    }
+  }
+
   try {
-    const conn = await mongoose.connect(mongoURI);
+    const conn = await mongoose.connect(mongoURI, {
+      dbName: 'UmarFarooqMobileShop',
+      serverSelectionTimeoutMS: 15000,
+    });
     console.log(`
   =======================================================
   🍃 MONGODB CONNECTED & LIVE: UmarFarooqMobileShop

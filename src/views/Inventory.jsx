@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Search,
 } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Inventory = ({ searchQuery }) => {
   const {
@@ -188,20 +189,22 @@ export const Inventory = ({ searchQuery }) => {
   const lowStockCount = products.filter((p) => p.stock <= p.minStockLimit).length;
 
   // Filtering
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch =
-      !searchQuery ||
-      p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.imei1 && p.imei1.includes(searchQuery)) ||
-      (p.imei2 && p.imei2.includes(searchQuery));
+  const filteredProducts = products
+    .filter((p) => {
+      const matchesSearch =
+        !searchQuery ||
+        p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.imei1 && p.imei1.includes(searchQuery)) ||
+        (p.imei2 && p.imei2.includes(searchQuery));
 
-    const matchesCategory = selectedCategory === 'All' || (p.category || 'New Phone') === selectedCategory;
-    const matchesBrand = selectedBrand === 'All' || p.brand === selectedBrand;
-    const matchesPta = selectedPta === 'All' || p.ptaStatus === selectedPta;
+      const matchesCategory = selectedCategory === 'All' || (p.category || 'New Phone') === selectedCategory;
+      const matchesBrand = selectedBrand === 'All' || p.brand === selectedBrand;
+      const matchesPta = selectedPta === 'All' || p.ptaStatus === selectedPta;
 
-    return matchesSearch && matchesCategory && matchesBrand && matchesPta;
-  });
+      return matchesSearch && matchesCategory && matchesBrand && matchesPta;
+    })
+    .sort(sortByNewest);
 
   return (
     <div>

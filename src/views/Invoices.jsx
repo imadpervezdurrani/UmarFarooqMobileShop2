@@ -4,6 +4,7 @@ import { Badge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { PrintableInvoice } from '../components/print/PrintableInvoice';
 import { FileText, Search, Printer, Eye, Calendar, DollarSign, Edit, Trash2, RotateCcw } from 'lucide-react';
+import { sortByNewest } from '../utils/sortUtils';
 
 export const Invoices = ({ searchQuery, selectedSale, setSelectedSale }) => {
   const { storeSettings, sales, updateSale, deleteSale, refundSale } = useApp();
@@ -23,19 +24,21 @@ export const Invoices = ({ searchQuery, selectedSale, setSelectedSale }) => {
     }
   }, [selectedSale]);
 
-  const filteredSales = (sales || []).filter((s) => {
-    const items = s.items || [];
-    const matchesSearch =
-      !searchQuery ||
-      (s.invoiceNo && s.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (s.customerName && s.customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (s.customerPhone && s.customerPhone.includes(searchQuery)) ||
-      items.some((it) => (it.imei && it.imei.includes(searchQuery)) || (it.model && it.model.toLowerCase().includes(searchQuery.toLowerCase())));
+  const filteredSales = (sales || [])
+    .filter((s) => {
+      const items = s.items || [];
+      const matchesSearch =
+        !searchQuery ||
+        (s.invoiceNo && s.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.customerName && s.customerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.customerPhone && s.customerPhone.includes(searchQuery)) ||
+        items.some((it) => (it.imei && it.imei.includes(searchQuery)) || (it.model && it.model.toLowerCase().includes(searchQuery.toLowerCase())));
 
-    const matchesStatus = statusFilter === 'All' || s.status === statusFilter;
+      const matchesStatus = statusFilter === 'All' || s.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    })
+    .sort(sortByNewest);
 
   return (
     <div>
