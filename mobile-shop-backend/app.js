@@ -42,7 +42,7 @@ app.use(
 app.use(express.json());
 
 // Health Check API
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({
     status: 'online',
     server: 'Mobile Shop Management Backend',
@@ -52,7 +52,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Desktop App Download Endpoint
-app.get('/api/download-desktop-app', (req, res) => {
+app.get(['/api/download-desktop-app', '/download-desktop-app'], (req, res) => {
   const possiblePaths = [
     path.join(__dirname, '..', 'release'),
     path.join(__dirname, '..', 'dist-electron'),
@@ -94,35 +94,40 @@ app.get('/api/download-desktop-app', (req, res) => {
 });
 
 // Database Reset & Seed Endpoint (Admin/Dev)
-app.post('/api/reset', (req, res) => {
+app.post(['/api/reset', '/reset'], (req, res) => {
   const result = resetDatabaseData();
   res.json(result);
 });
 
-app.get('/api/reset', (req, res) => {
+app.get(['/api/reset', '/reset'], (req, res) => {
   const result = resetDatabaseData();
   res.json(result);
 });
 
-app.get('/api/seed', (req, res) => {
+app.get(['/api/seed', '/seed'], (req, res) => {
   const result = resetDatabaseData();
   res.json(result);
 });
 
-// Mount Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/suppliers', supplierRoutes);
-app.use('/api/purchases', purchaseRoutes);
-app.use('/api/sales', saleRoutes);
-app.use('/api/invoices', invoiceRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/expenses', expenseRoutes);
-app.use('/api/stock', stockRoutes);
-app.use('/api/reports', reportRoutes);
+// Mount Routes for both /api and root prefixes (for standard and serverless routing)
+const mountRoutes = (prefix = '') => {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/users`, userRoutes);
+  app.use(`${prefix}/products`, productRoutes);
+  app.use(`${prefix}/categories`, categoryRoutes);
+  app.use(`${prefix}/customers`, customerRoutes);
+  app.use(`${prefix}/suppliers`, supplierRoutes);
+  app.use(`${prefix}/purchases`, purchaseRoutes);
+  app.use(`${prefix}/sales`, saleRoutes);
+  app.use(`${prefix}/invoices`, invoiceRoutes);
+  app.use(`${prefix}/payments`, paymentRoutes);
+  app.use(`${prefix}/expenses`, expenseRoutes);
+  app.use(`${prefix}/stock`, stockRoutes);
+  app.use(`${prefix}/reports`, reportRoutes);
+};
+
+mountRoutes('/api');
+mountRoutes('');
 
 // Error Handling Middleware
 app.use(errorHandler);

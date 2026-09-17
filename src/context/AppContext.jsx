@@ -3,7 +3,12 @@ import { sortByNewest } from '../utils/sortUtils';
 
 export const getApiBaseUrl = () => {
   if (typeof window !== 'undefined' && window.location) {
-    const hostname = window.location.hostname;
+    const { hostname, protocol } = window.location;
+    // When on Vercel or HTTPS, use relative /api to prevent Mixed Content & port 3000 failures
+    if (protocol === 'https:' || hostname.endsWith('vercel.app')) {
+      return '/api';
+    }
+    // If accessing via local Wi-Fi IP from phone (e.g., 192.168.x.x)
     if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
       return `http://${hostname}:3000/api`;
     }
