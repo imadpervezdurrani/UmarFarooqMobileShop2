@@ -7,6 +7,16 @@ export const defaultSampleData = {
     {
       id: 'u-1',
       name: 'Umar Farooq (Owner)',
+      email: 'admin@gmail.com',
+      password: '$2b$10$oTcgftO0LlSoRXmBMP3T9OOxMXENTdEPV.SmBoU16C3yz0NNbg6Y2',
+      role: 'admin',
+      title: 'Store Administrator',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+      createdAt: new Date().toISOString().split('T')[0],
+    },
+    {
+      id: 'u-2',
+      name: 'Umar Farooq (Owner)',
       email: 'UmarFarooq@celltech.com',
       password: '$2b$10$oTcgftO0LlSoRXmBMP3T9OOxMXENTdEPV.SmBoU16C3yz0NNbg6Y2',
       role: 'admin',
@@ -184,12 +194,10 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, 'config.env') });
 
 export const connectDB = async () => {
-  const mongoURI = process.env.MONGO_URI;
+  const mongoURI =
+    process.env.MONGO_URI ||
+    'mongodb+srv://imadk5557_db_user:Peshawar1@cluster0.0dfboq4.mongodb.net/UmarFarooqMobileShop?retryWrites=true&w=majority&appName=Cluster0';
 
-  if (!mongoURI) {
-    console.error('❌ MONGO_URI is missing in environment variables!');
-    return;
-  }
 
   // Ensure SRV DNS lookup resolves reliably for MongoDB Atlas on Windows
   if (mongoURI && mongoURI.includes('mongodb+srv://')) {
