@@ -115,7 +115,7 @@ export const Login = () => {
               type="email"
               required
               className="form-input"
-              placeholder="admin@celltech.com"
+              placeholder="UmarFarooq@celltech.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{ height: '44px' }}

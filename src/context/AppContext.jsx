@@ -31,25 +31,6 @@ const defaultStoreSettings = {
   taxRate: 0,
 };
 
-const defaultUsers = [
-  {
-    id: 'u-1',
-    name: 'Umar Farooq (Owner)',
-    email: 'admin@celltech.com',
-    role: 'admin',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-    title: 'Store Administrator',
-  },
-  {
-    id: 'u-2',
-    name: 'Hamza Khan',
-    email: 'hamza@celltech.com',
-    role: 'staff',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-    title: 'Senior Sales Executive',
-  },
-];
-
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
@@ -90,16 +71,30 @@ export const AppProvider = ({ children }) => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Current User & Auth State
-  const [authToken, setAuthToken] = useState(() => localStorage.getItem('celltech_token') || '');
+  // Current User & Auth State (Strictly Database Verified)
+  const [authToken, setAuthToken] = useState(() => {
+    const token = localStorage.getItem('celltech_token') || '';
+    if (token === 'offline-local-token') {
+      localStorage.removeItem('celltech_token');
+      localStorage.removeItem('celltech_user');
+      return '';
+    }
+    return token;
+  });
+
   const [currentUser, setCurrentUser] = useState(() => {
+    if (localStorage.getItem('celltech_token') === 'offline-local-token') return null;
     const saved = localStorage.getItem('celltech_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('celltech_user')));
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('celltech_token');
+    return Boolean(token && token !== 'offline-local-token' && localStorage.getItem('celltech_user'));
+  });
 
   // Main Entities State (Loaded directly from Database)
-  const [users, setUsers] = useState(defaultUsers);
+  const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -227,25 +222,8 @@ export const AppProvider = ({ children }) => {
         return false;
       }
     } catch (err) {
-      console.warn('Backend API connection error during login:', err.message);
-
-      // Offline Fallback Authentication for Mobile PWA / Standalone mode
-      const cleanEmail = (email || '').trim().toLowerCase();
-      const matchedUser = defaultUsers.find((u) => u.email.toLowerCase() === cleanEmail);
-      if (
-        matchedUser &&
-        (password === 'password123' || password === 'admin123' || password === 'admin')
-      ) {
-        setCurrentUser(matchedUser);
-        setAuthToken('offline-local-token');
-        setIsAuthenticated(true);
-        localStorage.setItem('celltech_user', JSON.stringify(matchedUser));
-        localStorage.setItem('celltech_token', 'offline-local-token');
-        showToast(`Welcome ${matchedUser.name}! (Mobile Standalone Session)`, 'success');
-        return true;
-      }
-
-      showToast(`Cannot reach backend server. Try demo: admin@celltech.com / password123`, 'error');
+      console.error('Backend API connection error during login:', err.message);
+      showToast('Cannot connect to backend database server. Please ensure backend is running.', 'error');
       return false;
     }
 
@@ -344,14 +322,9 @@ export const AppProvider = ({ children }) => {
         return { success: false, message: data.message };
       }
     } catch (err) {
-      const localUser = {
-        id: `u-${Date.now()}`,
-        ...userData,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setUsers((prev) => [localUser, ...prev]);
-      showToast(`Staff member "${localUser.name}" added!`);
-      return { success: true, user: localUser };
+      console.error('API Error adding user:', err);
+      showToast('Cannot connect to database server', 'error');
+      return { success: false, message: err.message };
     }
   };
 
@@ -377,9 +350,9 @@ export const AppProvider = ({ children }) => {
         return { success: false, message: data.message };
       }
     } catch (err) {
-      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...fields } : u)));
-      showToast('Staff member updated!');
-      return { success: true };
+      console.error('API Error updating user:', err);
+      showToast('Cannot connect to database server', 'error');
+      return { success: false };
     }
   };
 
@@ -397,13 +370,15 @@ export const AppProvider = ({ children }) => {
         setUsers((prev) => prev.filter((u) => u.id !== id));
         showToast('Staff member deleted successfully!');
         return true;
+      } else {
+        showToast('Failed to delete staff member from database', 'error');
+        return false;
       }
     } catch (err) {
-      console.error(err);
+      console.error('API Error deleting user:', err);
+      showToast('Cannot connect to database server', 'error');
+      return false;
     }
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    showToast('Staff member removed!');
-    return true;
   };
 
   // ----------------------------------------------------
@@ -434,14 +409,16 @@ export const AppProvider = ({ children }) => {
         fetchAllDataFromBackend();
         showToast(`Product "${savedProd.brand} ${savedProd.model}" added to Database!`);
         return savedProd;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.message || 'Failed to add product to database', 'error');
+        return null;
       }
     } catch (err) {
       console.error('API Error adding product:', err);
+      showToast('Cannot reach database server to save product', 'error');
+      return null;
     }
-
-    setProducts((prev) => [newProduct, ...prev]);
-    showToast(`Product "${newProduct.brand} ${newProduct.model}" added!`);
-    return newProduct;
   };
 
   const updateProduct = async (id, updatedFields) => {
@@ -454,16 +431,16 @@ export const AppProvider = ({ children }) => {
       if (res.ok) {
         fetchAllDataFromBackend();
         showToast('Product updated successfully in Database!');
-        return;
+        return true;
+      } else {
+        showToast('Failed to update product in database', 'error');
+        return false;
       }
     } catch (err) {
       console.error('API Error updating product:', err);
+      showToast('Cannot reach database server', 'error');
+      return false;
     }
-
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
-    );
-    showToast('Product updated!');
   };
 
   const deleteProduct = async (id) => {
@@ -481,14 +458,15 @@ export const AppProvider = ({ children }) => {
         setProducts((prev) => prev.filter((p) => p.id !== id));
         showToast('Deleted product from Database', 'warning');
         return true;
+      } else {
+        showToast('Failed to delete product from database', 'error');
+        return false;
       }
     } catch (err) {
       console.error('API Error deleting product:', err);
+      showToast('Cannot reach database server', 'error');
+      return false;
     }
-
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    showToast('Deleted product', 'warning');
-    return true;
   };
 
   // ----------------------------------------------------
@@ -510,7 +488,7 @@ export const AppProvider = ({ children }) => {
         const createdSale = body.data;
         setSales((prev) => [createdSale, ...prev.filter((s) => s.id !== createdSale.id)]);
         fetchAllDataFromBackend();
-        showToast(`Invoice ${createdSale.invoiceNo} generated via Express API!`);
+        showToast(`Invoice ${createdSale.invoiceNo} generated via Database!`);
         
         // Auto-dispatch WhatsApp invoice
         if (createdSale.customerPhone) {
@@ -519,28 +497,15 @@ export const AppProvider = ({ children }) => {
         
         return createdSale;
       } else {
-        const errData = await res.json();
-        showToast(errData.message || 'Failed to complete sale', 'error');
+        const errData = await res.json().catch(() => ({}));
+        showToast(errData.message || 'Failed to complete sale in database', 'error');
         return null;
       }
     } catch (err) {
       console.error('API Error processing sale:', err);
+      showToast('Cannot reach database server to process sale', 'error');
+      return null;
     }
-
-    // Fallback
-    const nextInvoiceNum = `INV-${1000 + sales.length + 1}`;
-    const newSale = {
-      id: `sale-${Date.now()}`,
-      invoiceNo: nextInvoiceNum,
-      ...salePayload,
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      salesPerson: currentUser ? currentUser.name : 'Staff',
-      status: salePayload.paidAmount >= salePayload.grandTotal ? 'Paid' : 'Partial',
-    };
-    setSales((prev) => [newSale, ...prev.filter((s) => s.id !== newSale.id)]);
-    showToast(`Invoice ${nextInvoiceNum} generated!`);
-    return newSale;
   };
 
   const refundSale = async (saleId, productId = null, refundQty = 1) => {
@@ -558,38 +523,18 @@ export const AppProvider = ({ children }) => {
 
       if (res.ok) {
         await fetchAllDataFromBackend();
-        showToast('Refund processed & stock restored to inventory!', 'success');
+        showToast('Refund processed & stock restored in Database!', 'success');
         return true;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.message || 'Failed to process refund in database', 'error');
+        return false;
       }
     } catch (err) {
       console.error('API Error processing refund:', err);
+      showToast('Cannot reach database server', 'error');
+      return false;
     }
-
-    // Local state fallback (for offline or local mode)
-    const targetSale = sales.find((s) => s.id === saleId);
-    if (targetSale) {
-      // Mark sale status as Refunded
-      setSales((prev) => prev.map((s) => (s.id === saleId ? { ...s, status: 'Refunded' } : s)));
-
-      // Restore product stock
-      const itemsToRestock = productId
-        ? (targetSale.items || []).filter((it) => it.productId === productId)
-        : (targetSale.items || []);
-
-      setProducts((prev) =>
-        prev.map((prod) => {
-          const item = itemsToRestock.find((it) => it.productId === prod.id || it.id === prod.id);
-          if (item) {
-            const qty = productId ? (parseInt(refundQty, 10) || 1) : (parseInt(item.quantity, 10) || 1);
-            return { ...prod, stock: (prod.stock || 0) + qty };
-          }
-          return prod;
-        })
-      );
-    }
-
-    showToast('Refund processed & stock restored locally', 'info');
-    return true;
   };
 
   const updateSale = async (id, fields) => {
@@ -603,27 +548,17 @@ export const AppProvider = ({ children }) => {
         const body = await res.json();
         setSales((prev) => prev.map((s) => (s.id === id ? { ...s, ...body.data } : s)));
         await fetchAllDataFromBackend();
-        showToast('Invoice updated successfully!');
+        showToast('Invoice updated successfully in Database!');
         return body.data;
+      } else {
+        showToast('Failed to update invoice in database', 'error');
+        return null;
       }
     } catch (err) {
       console.error('API Error updating sale:', err);
+      showToast('Cannot reach database server', 'error');
+      return null;
     }
-
-    // If status updated to 'Refunded' locally, restore stock
-    const currentSale = sales.find((s) => s.id === id);
-    if (fields.status === 'Refunded' && currentSale && currentSale.status !== 'Refunded') {
-      (currentSale.items || []).forEach((item) => {
-        const qty = parseInt(item.quantity, 10) || 1;
-        setProducts((prev) =>
-          prev.map((p) => (p.id === item.productId ? { ...p, stock: (p.stock || 0) + qty } : p))
-        );
-      });
-    }
-
-    setSales((prev) => prev.map((s) => (s.id === id ? { ...s, ...fields } : s)));
-    showToast('Invoice updated');
-    return true;
   };
 
   const deleteSale = async (id, restock = true) => {
@@ -636,15 +571,17 @@ export const AppProvider = ({ children }) => {
       if (res.ok) {
         setSales((prev) => prev.filter((s) => s.id !== id));
         fetchAllDataFromBackend();
-        showToast('Invoice deleted & inventory adjusted!', 'warning');
+        showToast('Invoice deleted from Database!', 'warning');
         return true;
+      } else {
+        showToast('Failed to delete invoice from database', 'error');
+        return false;
       }
     } catch (err) {
       console.error('API Error deleting sale:', err);
+      showToast('Cannot reach database server', 'error');
+      return false;
     }
-    setSales((prev) => prev.filter((s) => s.id !== id));
-    showToast('Invoice removed', 'warning');
-    return true;
   };
 
   const sendInvoiceWhatsApp = async (invoiceNo, phone = '') => {
@@ -801,15 +738,17 @@ export const AppProvider = ({ children }) => {
         const body = await res.json();
         setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, ...body.data } : c)));
         fetchAllDataFromBackend();
-        showToast('Customer details & dues updated!');
+        showToast('Customer details & dues updated in Database!');
         return body.data;
+      } else {
+        showToast('Failed to update customer in database', 'error');
+        return null;
       }
     } catch (err) {
       console.error('API Error updating customer:', err);
+      showToast('Cannot reach database server', 'error');
+      return null;
     }
-    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, ...fields } : c)));
-    showToast('Customer details updated');
-    return true;
   };
 
   const deleteCustomer = async (id) => {
@@ -821,15 +760,17 @@ export const AppProvider = ({ children }) => {
       if (res.ok) {
         setCustomers((prev) => prev.filter((c) => c.id !== id));
         fetchAllDataFromBackend();
-        showToast('Customer profile deleted!', 'warning');
+        showToast('Customer profile deleted from Database!', 'warning');
         return true;
+      } else {
+        showToast('Failed to delete customer from database', 'error');
+        return false;
       }
     } catch (err) {
       console.error('API Error deleting customer:', err);
+      showToast('Cannot reach database server', 'error');
+      return false;
     }
-    setCustomers((prev) => prev.filter((c) => c.id !== id));
-    showToast('Customer profile removed', 'warning');
-    return true;
   };
 
   const addSupplier = async (supp) => {
