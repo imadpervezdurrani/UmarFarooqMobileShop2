@@ -1,5 +1,6 @@
 import React from 'react';
 import { Laptop, Download, CheckCircle, X, Shield, Terminal, Zap } from 'lucide-react';
+import { API_BASE_URL } from '../../context/AppContext';
 
 export const DownloadAppModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -7,7 +8,7 @@ export const DownloadAppModal = ({ isOpen, onClose }) => {
   const isElectron = window.electronAPI?.isElectron;
 
   const handleDownload = () => {
-    const downloadUrl = 'http://localhost:3000/api/download-desktop-app';
+    const downloadUrl = `${API_BASE_URL}/download-desktop-app`;
     window.open(downloadUrl, '_blank');
   };
 

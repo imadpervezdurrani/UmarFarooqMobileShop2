@@ -1,4 +1,4 @@
-const CACHE_NAME = 'uf-mobile-zone-pwa-v1';
+const CACHE_NAME = 'uf-mobile-zone-pwa-v2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -22,13 +22,14 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate Event - Clean up old cache versions
+// Activate Event - Clean up old cache versions immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[PWA SW] Removing outdated cache:', key);
             return caches.delete(key);
           }
         })
@@ -78,27 +79,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle Static Assets & HTML Page Navigation
+  // Handle Static Assets & Navigation with Network-First (cache fallback for offline)
+  // This ensures new deployments on Vercel are immediately loaded without getting stuck on old JS bundles
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      // Return cached asset immediately if available, then fetch update in background (Stale-While-Revalidate)
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // If offline and request is navigation, fallback to index.html
+    fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
           if (request.mode === 'navigate') {
             return caches.match('./index.html');
           }
         });
-
-      return cachedResponse || fetchPromise;
-    })
+      })
   );
 });
 

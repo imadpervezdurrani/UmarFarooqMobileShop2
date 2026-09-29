@@ -185,11 +185,24 @@ export function saveDB() {
   syncToMongoDB();
 }
 
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, 'config.env') });
+
 export const connectDB = async () => {
-  const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/UmarFarooqMobileShop';
+  const mongoURI = process.env.MONGO_URI;
+
+  if (!mongoURI) {
+    console.error('❌ MONGO_URI is missing in environment variables!');
+    return;
+  }
 
   // Ensure SRV DNS lookup resolves reliably for MongoDB Atlas on Windows
-  if (mongoURI.includes('mongodb+srv://')) {
+  if (mongoURI && mongoURI.includes('mongodb+srv://')) {
     try {
       dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
     } catch (e) {

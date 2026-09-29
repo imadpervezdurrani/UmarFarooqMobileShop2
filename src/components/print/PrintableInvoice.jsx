@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp, API_BASE_URL } from '../../context/AppContext';
 import { Printer, Smartphone, ShieldCheck, Send, FileDown } from 'lucide-react';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
@@ -82,7 +82,8 @@ export const PrintableInvoice = ({ sale, onClose }) => {
     if (cleanPhone.startsWith('0')) cleanPhone = '92' + cleanPhone.slice(1);
     else if (!cleanPhone.startsWith('92')) cleanPhone = '92' + cleanPhone;
 
-    const pdfLink = `http://localhost:3000/api/invoices/${sale.invoiceNo}/pdf`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const pdfLink = `${origin}${API_BASE_URL}/invoices/${sale.invoiceNo}/pdf`;
     const waText = encodeURIComponent(
       `🧾 *INVOICE DOCUMENT: ${sale.invoiceNo}*\n🏢 *${storeSettings.storeName}*\n\nDear *${sale.customerName || 'Customer'}*,\nPlease download your official PDF Invoice here:\n${pdfLink}\n\n💰 *Total Paid:* Rs. ${grandTotal.toLocaleString()}\n\nThank you for your business!`
     );
@@ -119,7 +120,7 @@ export const PrintableInvoice = ({ sale, onClose }) => {
       showToast(`Invoice ${sale.invoiceNo} PDF downloaded successfully!`, 'success');
     } catch (err) {
       console.error('Error generating client PDF, falling back to backend:', err);
-      window.open(`http://localhost:3000/api/invoices/${sale.invoiceNo}/pdf`, '_blank');
+      window.open(`${API_BASE_URL}/invoices/${sale.invoiceNo}/pdf`, '_blank');
     } finally {
       setIsDownloading(false);
     }
