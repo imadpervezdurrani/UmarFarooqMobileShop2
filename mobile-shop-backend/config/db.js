@@ -71,18 +71,25 @@ export function ensureSeedData() {
   }
 }
 
+let dbInstance = null;
+let connectionPromise = null;
 let lastLoadTime = 0;
-const CACHE_TTL_MS = 4000; // 4 seconds cache to prevent query flood
+const CACHE_TTL_MS = 4000;
+
+export async function getDB() {
+  if (dbInstance) return dbInstance;
+  return await connectDB();
+}
 
 export async function loadFromMongoDB(force = false) {
   const now = Date.now();
   if (!force && now - lastLoadTime < CACHE_TTL_MS) {
-    return; // Already fresh in memory
+    return;
   }
 
   try {
-    if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
-      const db = mongoose.connection.db;
+    const db = await getDB();
+    if (db) {
       const collections = await db.listCollections().toArray();
 
       await Promise.all(
@@ -112,8 +119,8 @@ export async function loadFromMongoDB(force = false) {
 
 export async function syncToMongoDB(specificKey = null) {
   try {
-    if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
-      const db = mongoose.connection.db;
+    const db = await getDB();
+    if (db) {
       const keys = specificKey ? [specificKey] : Object.keys(store);
 
       await Promise.all(
@@ -155,6 +162,8 @@ export async function syncToMongoDB(specificKey = null) {
 
       // Invalidate load cache so next GET reflects newly saved data
       lastLoadTime = 0;
+    } else {
+      console.warn('Cannot sync to MongoDB: db is null');
     }
   } catch (err) {
     console.error('MongoDB sync error:', err.message);
@@ -165,8 +174,6 @@ export function saveDB(specificKey = null) {
   return syncToMongoDB(specificKey);
 }
 
-
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -176,42 +183,41 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, 'config.env') });
 
 export const connectDB = async () => {
+  if (dbInstance) return dbInstance;
+  if (connectionPromise) return connectionPromise;
+
   const mongoURI =
     process.env.MONGO_URI ||
     'mongodb+srv://imadk5557_db_user:Peshawar1@cluster0.0dfboq4.mongodb.net/UmarFarooqMobileShop?retryWrites=true&w=majority&appName=Cluster0';
 
-
-  // Ensure SRV DNS lookup resolves reliably for MongoDB Atlas on Windows
   if (mongoURI && mongoURI.includes('mongodb+srv://')) {
     try {
       dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
-    } catch (e) {
-      // Ignore if not permitted
+    } catch (e) {}
+  }
+
+  connectionPromise = (async () => {
+    try {
+      const conn = await mongoose.connect(mongoURI, {
+        dbName: 'UmarFarooqMobileShop',
+        serverSelectionTimeoutMS: 15000,
+      });
+      dbInstance = conn.connection.db;
+      console.log(`🍃 MONGODB CONNECTED & LIVE: UmarFarooqMobileShop`);
+      await loadFromMongoDB(true);
+      return dbInstance;
+    } catch (error) {
+      console.warn('MongoDB Connection Warning:', error.message);
+      ensureSeedData();
+      return null;
+    } finally {
+      connectionPromise = null;
     }
-  }
+  })();
 
-  try {
-    const conn = await mongoose.connect(mongoURI, {
-      dbName: 'UmarFarooqMobileShop',
-      serverSelectionTimeoutMS: 15000,
-    });
-    console.log(`
-  =======================================================
-  🍃 MONGODB CONNECTED & LIVE: UmarFarooqMobileShop
-  =======================================================
-  ➜ Connection URI: ${mongoURI}
-  ➜ Host: ${conn.connection.host}
-  ➜ Database Name: ${conn.connection.name}
-  =======================================================
-    `);
-
-    await loadFromMongoDB();
-    await syncToMongoDB();
-  } catch (error) {
-    console.warn('MongoDB Connection Warning:', error.message);
-    ensureSeedData();
-  }
+  return connectionPromise;
 };
+
 
 export function resetDatabaseData() {
   Object.keys(store).forEach((key) => {
