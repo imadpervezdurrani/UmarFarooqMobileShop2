@@ -71,23 +71,35 @@ export function ensureSeedData() {
   }
 }
 
-export async function loadFromMongoDB() {
+let lastLoadTime = 0;
+const CACHE_TTL_MS = 4000; // 4 seconds cache to prevent query flood
+
+export async function loadFromMongoDB(force = false) {
+  const now = Date.now();
+  if (!force && now - lastLoadTime < CACHE_TTL_MS) {
+    return; // Already fresh in memory
+  }
+
   try {
     if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
       const db = mongoose.connection.db;
       const collections = await db.listCollections().toArray();
 
-      for (const col of collections) {
-        const key = col.name;
-        if (store[key] !== undefined) {
-          const docs = await db.collection(key).find({}).toArray();
-          const mapped = docs.map(({ _id, ...rest }) => rest);
-          if (key !== 'users' && key !== 'categories') {
-            mapped.sort(sortByNewest);
+      await Promise.all(
+        collections.map(async (col) => {
+          const key = col.name;
+          if (store[key] !== undefined) {
+            const docs = await db.collection(key).find({}).toArray();
+            const mapped = docs.map(({ _id, ...rest }) => rest);
+            if (key !== 'users' && key !== 'categories') {
+              mapped.sort(sortByNewest);
+            }
+            store[key] = mapped;
           }
-          store[key] = mapped;
-        }
-      }
+        })
+      );
+
+      lastLoadTime = Date.now();
       ensureSeedData();
     } else {
       ensureSeedData();
@@ -104,26 +116,25 @@ export async function syncToMongoDB(specificKey = null) {
       const db = mongoose.connection.db;
       const keys = specificKey ? [specificKey] : Object.keys(store);
 
-      for (const key of keys) {
-        if (store[key] && Array.isArray(store[key])) {
-          const collection = db.collection(key);
-          const items = store[key];
+      await Promise.all(
+        keys.map(async (key) => {
+          if (store[key] && Array.isArray(store[key]) && store[key].length > 0) {
+            const collection = db.collection(key);
+            const items = store[key];
 
-          // Sanitize documents
-          for (const item of items) {
-            if (item && item._id !== undefined) {
-              delete item._id;
+            // Sanitize documents
+            for (const item of items) {
+              if (item && item._id !== undefined) {
+                delete item._id;
+              }
             }
-          }
 
-          if (items.length > 0) {
-            const hasId = items.every((item) => item && item.id);
-            if (hasId) {
-              const currentIds = items.map((d) => d.id).filter(Boolean);
-              // Remove deleted records
+            const currentIds = items.map((d) => d.id).filter(Boolean);
+            if (currentIds.length > 0) {
+              // Delete records removed from store
               await collection.deleteMany({ id: { $nin: currentIds } });
 
-              // Bulk upsert documents
+              // Bulk upsert all records in parallel
               const operations = items.map((doc) => {
                 const { _id, ...cleanDoc } = doc;
                 return {
@@ -137,16 +148,13 @@ export async function syncToMongoDB(specificKey = null) {
               if (operations.length > 0) {
                 await collection.bulkWrite(operations, { ordered: false });
               }
-            } else {
-              await collection.deleteMany({});
-              const cleanDocs = items.map(({ _id, ...rest }) => ({ ...rest }));
-              if (cleanDocs.length > 0) {
-                await collection.insertMany(cleanDocs);
-              }
             }
           }
-        }
-      }
+        })
+      );
+
+      // Invalidate load cache so next GET reflects newly saved data
+      lastLoadTime = 0;
     }
   } catch (err) {
     console.error('MongoDB sync error:', err.message);
@@ -156,6 +164,7 @@ export async function syncToMongoDB(specificKey = null) {
 export function saveDB(specificKey = null) {
   return syncToMongoDB(specificKey);
 }
+
 
 
 import dotenv from 'dotenv';

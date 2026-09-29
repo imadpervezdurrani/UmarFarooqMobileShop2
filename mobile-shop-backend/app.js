@@ -46,7 +46,6 @@ app.use(async (req, res, next) => {
   // On GET requests, ensure memory store reflects latest MongoDB Atlas data
   if (
     req.method === 'GET' &&
-    req.path.startsWith('/api') &&
     !req.path.includes('/health') &&
     !req.path.includes('/download')
   ) {
