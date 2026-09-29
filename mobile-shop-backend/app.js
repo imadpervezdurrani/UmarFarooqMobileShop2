@@ -26,7 +26,7 @@ import stockRoutes from './routes/stockRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 
 import { errorHandler } from './middleware/errorMiddleware.js';
-import { resetDatabaseData } from './config/db.js';
+import { resetDatabaseData, loadFromMongoDB, syncToMongoDB } from './config/db.js';
 
 const app = express();
 
@@ -40,6 +40,39 @@ app.use(
 );
 
 app.use(express.json());
+
+// Guaranteed MongoDB Atlas synchronization for Serverless & Cloud deployment
+app.use(async (req, res, next) => {
+  // On GET requests, ensure memory store reflects latest MongoDB Atlas data
+  if (
+    req.method === 'GET' &&
+    req.path.startsWith('/api') &&
+    !req.path.includes('/health') &&
+    !req.path.includes('/download')
+  ) {
+    try {
+      await loadFromMongoDB();
+    } catch (e) {
+      console.warn('loadFromMongoDB middleware error:', e.message);
+    }
+  }
+
+  // On data-mutating requests (POST, PUT, DELETE, PATCH):
+  // Intercept res.json to AWAIT writing all changes to MongoDB Atlas before sending HTTP response!
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    const originalJson = res.json.bind(res);
+    res.json = async function (data) {
+      try {
+        await syncToMongoDB();
+      } catch (syncErr) {
+        console.error('CRITICAL: MongoDB sync error before response:', syncErr.message);
+      }
+      return originalJson(data);
+    };
+  }
+
+  next();
+});
 
 // Health Check API
 app.get(['/api/health', '/health'], (req, res) => {

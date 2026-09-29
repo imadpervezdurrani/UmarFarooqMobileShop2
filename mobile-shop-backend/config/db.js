@@ -77,28 +77,18 @@ export async function loadFromMongoDB() {
       const db = mongoose.connection.db;
       const collections = await db.listCollections().toArray();
 
-      let hasDocs = false;
       for (const col of collections) {
         const key = col.name;
         if (store[key] !== undefined) {
           const docs = await db.collection(key).find({}).toArray();
-          if (docs.length > 0) {
-            hasDocs = true;
-            const mapped = docs.map(({ _id, ...rest }) => rest);
-            // Sort records with newest first
-            if (key !== 'users' && key !== 'categories') {
-              mapped.sort(sortByNewest);
-            }
-            store[key] = mapped;
+          const mapped = docs.map(({ _id, ...rest }) => rest);
+          if (key !== 'users' && key !== 'categories') {
+            mapped.sort(sortByNewest);
           }
+          store[key] = mapped;
         }
       }
-
-      if (!hasDocs) {
-        ensureSeedData();
-      } else {
-        console.log('🍃 Loaded collections from MongoDB into Memory Store');
-      }
+      ensureSeedData();
     } else {
       ensureSeedData();
     }
@@ -108,43 +98,32 @@ export async function loadFromMongoDB() {
   }
 }
 
-let isSyncing = false;
-let hasPendingSync = false;
-
-export async function syncToMongoDB() {
-  if (isSyncing) {
-    hasPendingSync = true;
-    return;
-  }
-
-  isSyncing = true;
+export async function syncToMongoDB(specificKey = null) {
   try {
     if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
       const db = mongoose.connection.db;
-      const keys = Object.keys(store);
+      const keys = specificKey ? [specificKey] : Object.keys(store);
 
       for (const key of keys) {
         if (store[key] && Array.isArray(store[key])) {
           const collection = db.collection(key);
           const items = store[key];
 
-          // Always sanitize in-memory items to ensure no leaked _id
+          // Sanitize documents
           for (const item of items) {
             if (item && item._id !== undefined) {
               delete item._id;
             }
           }
 
-          if (items.length === 0) {
-            await collection.deleteMany({});
-          } else {
+          if (items.length > 0) {
             const hasId = items.every((item) => item && item.id);
             if (hasId) {
-              const currentIds = items.map((d) => d.id);
-              // 1. Remove records that were deleted in store
+              const currentIds = items.map((d) => d.id).filter(Boolean);
+              // Remove deleted records
               await collection.deleteMany({ id: { $nin: currentIds } });
 
-              // 2. Atomically upsert each document by its unique string 'id'
+              // Bulk upsert documents
               const operations = items.map((doc) => {
                 const { _id, ...cleanDoc } = doc;
                 return {
@@ -159,7 +138,6 @@ export async function syncToMongoDB() {
                 await collection.bulkWrite(operations, { ordered: false });
               }
             } else {
-              // Fallback for arrays without unique id property
               await collection.deleteMany({});
               const cleanDocs = items.map(({ _id, ...rest }) => ({ ...rest }));
               if (cleanDocs.length > 0) {
@@ -172,18 +150,13 @@ export async function syncToMongoDB() {
     }
   } catch (err) {
     console.error('MongoDB sync error:', err.message);
-  } finally {
-    isSyncing = false;
-    if (hasPendingSync) {
-      hasPendingSync = false;
-      syncToMongoDB();
-    }
   }
 }
 
-export function saveDB() {
-  syncToMongoDB();
+export function saveDB(specificKey = null) {
+  return syncToMongoDB(specificKey);
 }
+
 
 import dotenv from 'dotenv';
 import path from 'path';
