@@ -3,7 +3,7 @@ import store, { saveDB } from '../config/db.js';
 export const User = {
   find: () => store.users,
   findById: (id) => store.users.find((u) => u.id === id),
-  findByEmail: (email) => store.users.find((u) => u.email.toLowerCase() === email.toLowerCase()),
+  findByEmail: (email) => store.users.find((u) => u.email && u.email.toLowerCase().trim() === (email || '').toLowerCase().trim()),
   create: (userData) => {
     const newUser = {
       id: `u-${Date.now()}`,
