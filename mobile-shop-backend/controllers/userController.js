@@ -85,10 +85,6 @@ export const changePassword = async (req, res) => {
       isMatch = (oldPassword === user.password);
     }
 
-    if (!isMatch && (oldPassword === 'password123' || oldPassword === 'admin123')) {
-      isMatch = true;
-    }
-
     if (!isMatch) {
       return sendError(res, 'Incorrect current password', 400);
     }

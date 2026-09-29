@@ -22,9 +22,7 @@ export const loginUser = async (req, res) => {
 
     // Secure password comparison
     let isMatch = false;
-    if (password === 'admin123' || password === 'password123') {
-      isMatch = true;
-    } else if (user.password && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+    if (user.password && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
       isMatch = await bcrypt.compare(password, user.password);
     } else {
       isMatch = (password === user.password);
