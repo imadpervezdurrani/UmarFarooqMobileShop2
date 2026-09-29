@@ -716,6 +716,33 @@ h1, h2, h3, h4, .brand-font {
     break-before: avoid !important;
   }
 
+  /* Specific Override for 80mm POS Thermal Receipt Printing */
+  body.printing-thermal .invoice-receipt.thermal-receipt-mode,
+  body:has(.invoice-receipt.thermal-receipt-mode) .invoice-receipt.thermal-receipt-mode {
+    position: static !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    min-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 2mm 3mm 10mm 3mm !important;
+    font-family: 'Courier New', Courier, monospace, monospace !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  body.printing-thermal .invoice-receipt.thermal-receipt-mode *,
+  body:has(.invoice-receipt.thermal-receipt-mode) .invoice-receipt.thermal-receipt-mode * {
+    color: #000000 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
   /* Compact spacing strictly calibrated to guarantee a single 1-page fit on A4 */
   .invoice-header-section {
     padding-bottom: 0.65rem !important;
