@@ -1,27 +1,55 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Smartphone, Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Smartphone, Lock, Mail, ArrowRight, Eye, EyeOff, User, UserPlus, LogIn, ShieldCheck } from 'lucide-react';
 
 export const Login = () => {
-  const { storeSettings, login } = useApp();
+  const { storeSettings, login, register } = useApp();
 
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('staff');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) return;
     setErrorMsg('');
-    setLoading(true);
 
-    const success = await login(email, password);
-    setLoading(false);
+    if (mode === 'login') {
+      if (!email || !password) return;
+      setLoading(true);
+      const success = await login(email, password);
+      setLoading(false);
 
-    if (!success) {
-      setErrorMsg('Invalid email or password. Please check your credentials.');
+      if (!success) {
+        setErrorMsg('Invalid email or password. Please check your credentials.');
+      }
+    } else {
+      if (!name || !email || !password) {
+        setErrorMsg('Please fill in all required fields.');
+        return;
+      }
+      if (password.length < 6) {
+        setErrorMsg('Password must be at least 6 characters.');
+        return;
+      }
+
+      setLoading(true);
+      const res = await register({
+        name,
+        email,
+        password,
+        role,
+        title: role === 'admin' ? 'Store Administrator' : (role === 'manager' ? 'Branch Manager' : 'Sales Staff'),
+      });
+      setLoading(false);
+
+      if (!res.success) {
+        setErrorMsg(res.message || 'Registration failed. Please try again.');
+      }
     }
   };
 
@@ -44,8 +72,8 @@ export const Login = () => {
         className="glass-card"
         style={{
           width: '100%',
-          maxWidth: '420px',
-          padding: '2rem 1.5rem',
+          maxWidth: '440px',
+          padding: '2rem 1.75rem',
           borderRadius: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
@@ -53,7 +81,7 @@ export const Login = () => {
         }}
       >
         {/* Brand Logo & Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div
             style={{
               width: '56px',
@@ -82,8 +110,75 @@ export const Login = () => {
             {storeSettings.storeName}
           </h1>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Enter your credentials to access the shop management system
+            {mode === 'login'
+              ? 'Enter your credentials to access the shop management system'
+              : 'Create a new staff or admin account for your mobile shop'}
           </p>
+        </div>
+
+        {/* Mode Switcher Tabs */}
+        <div
+          style={{
+            display: 'flex',
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: '4px',
+            borderRadius: '12px',
+            marginBottom: '1.5rem',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setMode('login');
+              setErrorMsg('');
+            }}
+            style={{
+              flex: 1,
+              padding: '0.55rem',
+              borderRadius: '9px',
+              border: 'none',
+              background: mode === 'login' ? 'var(--accent-cyan)' : 'transparent',
+              color: mode === 'login' ? '#041221' : 'var(--text-muted)',
+              fontWeight: mode === 'login' ? 700 : 500,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <LogIn size={15} />
+            <span>Sign In</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode('register');
+              setErrorMsg('');
+            }}
+            style={{
+              flex: 1,
+              padding: '0.55rem',
+              borderRadius: '9px',
+              border: 'none',
+              background: mode === 'register' ? 'var(--accent-cyan)' : 'transparent',
+              color: mode === 'register' ? '#041221' : 'var(--text-muted)',
+              fontWeight: mode === 'register' ? 700 : 500,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <UserPlus size={15} />
+            <span>Register</span>
+          </button>
         </div>
 
         {/* Error Alert */}
@@ -104,8 +199,45 @@ export const Login = () => {
           </div>
         )}
 
-        {/* Secure Login Form */}
+        {/* Dynamic Form */}
         <form onSubmit={handleSubmit}>
+          {mode === 'register' && (
+            <>
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <User size={14} color="var(--accent-cyan)" />
+                  <span>Full Name</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  placeholder="e.g. Ali Ahmed"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  style={{ height: '44px' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <ShieldCheck size={14} color="var(--accent-cyan)" />
+                  <span>Account Role</span>
+                </label>
+                <select
+                  className="form-input"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  style={{ height: '44px' }}
+                >
+                  <option value="staff">Staff Member (Sales & Invoicing)</option>
+                  <option value="manager">Manager (Stock & Reports)</option>
+                  <option value="admin">Store Admin (Full Control)</option>
+                </select>
+              </div>
+            </>
+          )}
+
           <div className="form-group">
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Mail size={14} color="var(--accent-cyan)" />
@@ -115,7 +247,7 @@ export const Login = () => {
               type="email"
               required
               className="form-input"
-              placeholder="UmarFarooq@celltech.com"
+              placeholder={mode === 'login' ? 'UmarFarooq@celltech.com' : 'user@domain.com'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{ height: '44px' }}
@@ -132,7 +264,7 @@ export const Login = () => {
                 type={showPassword ? 'text' : 'password'}
                 required
                 className="form-input"
-                placeholder="••••••••"
+                placeholder={mode === 'register' ? 'Minimum 6 characters' : '••••••••'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ height: '44px', paddingRight: '42px' }}
@@ -165,7 +297,7 @@ export const Login = () => {
               height: '46px',
               fontSize: '0.95rem',
               fontWeight: 700,
-              marginTop: '1rem',
+              marginTop: '1.25rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -173,15 +305,69 @@ export const Login = () => {
             }}
           >
             {loading ? (
-              <span>Authenticating...</span>
-            ) : (
+              <span>{mode === 'login' ? 'Authenticating...' : 'Creating Account...'}</span>
+            ) : mode === 'login' ? (
               <>
                 <span>Secure Sign In</span>
                 <ArrowRight size={18} />
               </>
+            ) : (
+              <>
+                <UserPlus size={18} />
+                <span>Register New Account</span>
+              </>
             )}
           </button>
         </form>
+
+        {/* Footer Toggle Link */}
+        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          {mode === 'login' ? (
+            <span>
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  setErrorMsg('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-cyan)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline',
+                }}
+              >
+                Register here
+              </button>
+            </span>
+          ) : (
+            <span>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setErrorMsg('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-cyan)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline',
+                }}
+              >
+                Sign In
+              </button>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

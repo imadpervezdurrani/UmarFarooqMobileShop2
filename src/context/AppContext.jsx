@@ -231,6 +231,43 @@ export const AppProvider = ({ children }) => {
     return false;
   };
 
+  // Secure API Register Handler
+  const register = async ({ name, email, password, role = 'staff', title = 'Staff Member' }) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role, title }),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.data) {
+        const user = body.data.user;
+        const token = body.data.token;
+
+        if (user && token) {
+          setCurrentUser(user);
+          setAuthToken(token);
+          setIsAuthenticated(true);
+          localStorage.setItem('celltech_user', JSON.stringify(user));
+          localStorage.setItem('celltech_token', token);
+          setUsers((prev) => [...prev, user]);
+          showToast(`Account created successfully! Welcome, ${user.name}!`);
+          return { success: true };
+        }
+      } else {
+        const msg = body.message || 'Registration failed';
+        showToast(msg, 'error');
+        return { success: false, message: msg };
+      }
+    } catch (err) {
+      console.error('Backend API error during registration:', err.message);
+      showToast('Cannot connect to backend database server', 'error');
+      return { success: false, message: 'Server connection error' };
+    }
+    return { success: false, message: 'Registration failed' };
+  };
+
   // Logout Handler
   const logout = () => {
     setCurrentUser(null);
@@ -917,6 +954,7 @@ export const AppProvider = ({ children }) => {
         setCurrentUser,
         isAuthenticated,
         login,
+        register,
         logout,
         switchRole,
         isAdmin,

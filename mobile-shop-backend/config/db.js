@@ -8,7 +8,7 @@ export const defaultSampleData = {
       id: 'u-1',
       name: 'Umar Farooq (Owner)',
       email: 'UmarFarooq@celltech.com',
-      password: '$2b$10$8ORXpVGE3EzDfFQgcEqy1.4f7jIJlTGQZy1lGignBdrd63R.nNJYG',
+      password: '$2b$10$oTcgftO0LlSoRXmBMP3T9OOxMXENTdEPV.SmBoU16C3yz0NNbg6Y2',
       role: 'admin',
       title: 'Store Administrator',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
