@@ -181,34 +181,6 @@ export const Login = () => {
               </>
             )}
           </button>
-
-          {/* Quick Demo Fill for Mobile Users */}
-          <div style={{ marginTop: '1.25rem' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('admin@celltech.com');
-                setPassword('password123');
-              }}
-              style={{
-                width: '100%',
-                padding: '0.6rem 0.75rem',
-                borderRadius: '12px',
-                background: 'rgba(56, 189, 248, 0.08)',
-                border: '1px solid rgba(56, 189, 248, 0.25)',
-                color: 'var(--accent-cyan)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-              }}
-            >
-              <span>🔑 Auto-Fill Admin Login</span>
-            </button>
-          </div>
         </form>
       </div>
     </div>
